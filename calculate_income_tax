@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+import collections
+import sys
+
+
+Bracket = collections.namedtuple('Bracket', ['ceiling', 'rate'])
+
+
+class Status(object):
+    SINGLE = 'SINGLE'
+    MARRIED_FILING_JOINTLY = 'MARRIED_FILING_JOINTLY'
+    MARRIED_FILING_SEPARATELY = 'MARRIED_FILING_SEPARATELY'
+    HEAD_OF_HOUSEHOLD = 'HEAD_OF_HOUSEHOLD'
+
+
+BRACKETS_BY_YEAR = {
+    2016: {
+        Status.SINGLE: [
+            Bracket(ceiling=9275, rate=0.10),
+            Bracket(ceiling=37650, rate=0.18),
+            Bracket(ceiling=91150, rate=0.25),
+            Bracket(ceiling=190150, rate=0.28),
+            Bracket(ceiling=413350, rate=0.33),
+            Bracket(ceiling=415050, rate=0.35),
+            Bracket(ceiling=None, rate=0.396),
+        ],
+    },
+}
+
+
+
+def calculate_tax(income, brackets):
+    # Note: This is an approximation. The exact rules for calculating
+    # taxes on the first $100,000 are more complicated. The rules are
+    # documented at: https://www.irs.gov/pub/irs-pdf/i1040tt.pdf.
+    taxes = 0
+    last_ceiling = 0
+
+    for i, bracket in enumerate(brackets):
+        if bracket.ceiling is None or bracket.ceiling > income:
+            taxes += (income - last_ceiling) * bracket.rate
+            break
+
+        taxes += (bracket.ceiling - last_ceiling) * bracket.rate
+        last_ceiling = bracket.ceiling
+
+    return taxes
+
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        sys.stderr.write('USAGE: {0} INCOME YEAR STATUS\n'.format(sys.argv[0]))
+        sys.exit(1)
+
+    year = int(sys.argv[2])
+    status = sys.argv[3]
+    brackets = BRACKETS_BY_YEAR.get(year, {}).get(status)
+    if not brackets:
+        sys.stderr.write(("We don't have information for year {0} "
+                          "and filing status {1}.".format(year, status)))
+        sys.exit(1)
+
+    print calculate_tax(income=int(sys.argv[1]), brackets=brackets)
