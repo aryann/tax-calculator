@@ -37,7 +37,7 @@ def calculate_tax(income, brackets):
     taxes = 0
     last_ceiling = 0
 
-    for i, bracket in enumerate(brackets):
+    for bracket in brackets:
         if bracket.ceiling is None or bracket.ceiling > income:
             taxes += (income - last_ceiling) * bracket.rate
             break
